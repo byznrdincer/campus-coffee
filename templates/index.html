@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Campus Coffee ☕</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f0eb;
+        }
+
+        .header {
+            background: #6f4e37;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .menu-item {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: 0.2s;
+        }
+
+        .menu-item:hover {
+            border-color: #6f4e37;
+        }
+
+        .menu-item.selected {
+            border-color: #6f4e37;
+            background: #fff3e0;
+        }
+
+        .emoji {
+            font-size: 40px;
+        }
+
+        .price {
+            color: #6f4e37;
+            font-weight: bold;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        button {
+            background: #6f4e37;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        button:disabled {
+            background: #aaa;
+            cursor: not-allowed;
+        }
+
+        #success {
+            display: none;
+            background: #4caf50;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .summary {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>☕ Campus Coffee</h1>
+    <p>Kampüs Kahve Sipariş Sistemi</p>
+</div>
+
+<div class="container">
+
+    <h2>Menü</h2>
+
+    <div class="menu-grid">
+        {% for item in menu %}
+        <div class="menu-item" onclick="toggleItem(this, {{ item.id }}, '{{ item.name }}', {{ item.price }})">
+            <div class="emoji">{{ item.emoji }}</div>
+            <div><strong>{{ item.name }}</strong></div>
+            <div class="price">{{ item.price }} ₺</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <p>Seçilenler: <span id="selected-text">Henüz seçilmedi</span></p>
+    <p class="summary">Toplam: <span id="total">0</span> ₺</p>
+
+    <input type="text" id="student-name" placeholder="Adınız Soyadınız">
+    <textarea id="note" placeholder="Not (opsiyonel)" rows="2"></textarea>
+
+    <button id="order-btn" onclick="submitOrder()">🛒 Sipariş Ver</button>
+
+    <div id="success">✅ Siparişiniz alındı! Hazırlanıyor...</div>
+
+</div>
+
+<script>
+let selectedItems = [];
+
+function toggleItem(el, id, name, price) {
+    const idx = selectedItems.findIndex(i => i.id === id);
+
+    if (idx > -1) {
+        selectedItems.splice(idx, 1);
+        el.classList.remove('selected');
+    } else {
+        selectedItems.push({id, name, price});
+        el.classList.add('selected');
+    }
+
+    updateSummary();
+}
+
+function updateSummary() {
+    const text = selectedItems.length
+        ? selectedItems.map(i => i.name).join(', ')
+        : 'Henüz seçilmedi';
+
+    const total = selectedItems.reduce((sum, i) => sum + i.price, 0);
+
+    document.getElementById('selected-text').textContent = text;
+    document.getElementById('total').textContent = total;
+}
+
+async function submitOrder() {
+    const btn = document.getElementById('order-btn');
+    const name = document.getElementById('student-name').value.trim();
+
+    if (!name) {
+        alert('Adınızı girin');
+        return;
+    }
+
+    if (!selectedItems.length) {
+        alert('Ürün seçin');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Gönderiliyor...';
+
+    const res = await fetch('/order', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            student_name: name,
+            items: selectedItems,
+            note: document.getElementById('note').value
+        })
+    });
+
+    if (res.ok) {
+        document.getElementById('success').style.display = 'block';
+        selectedItems = [];
+        document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('selected'));
+        document.getElementById('student-name').value = '';
+        document.getElementById('note').value = '';
+        updateSummary();
+    }
+
+    btn.disabled = false;
+    btn.textContent = '🛒 Sipariş Ver';
+}
+</script>
+
+</body>
+</html>

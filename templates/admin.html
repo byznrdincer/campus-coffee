@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Panel - Campus Coffee</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f0eb; }
+        .header { background: #6f4e37; color: white; padding: 20px; text-align: center; }
+        .container { max-width: 900px; margin: 30px auto; padding: 20px; }
+        .order-card { background: white; border-radius: 10px; padding: 20px; margin: 15px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .order-header { display: flex; justify-content: space-between; align-items: center; }
+        select { padding: 8px; border-radius: 8px; border: 1px solid #ddd; cursor: pointer; }
+        .items { margin: 10px 0; color: #555; }
+        .note { font-style: italic; color: #888; font-size: 13px; }
+        .time { color: #aaa; font-size: 12px; }
+        a { color: white; text-decoration: none; background: #a0522d; padding: 8px 15px; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>☕ Admin Paneli</h1>
+        <p>Toplam Sipariş: {{ orders|length }}</p>
+    </div>
+
+    <div class="container">
+        <a href="/">← Sipariş Ekranı</a>
+        <br><br>
+
+        {% for order in orders %}
+        <div class="order-card">
+
+            <div class="order-header">
+                <div>
+                    <strong>{{ order.student_name }}</strong>
+                    <span class="time">
+                        — {{ order.created_at[:16].replace('T',' ') }}
+                    </span>
+                </div>
+
+                <select onchange="updateStatus('{{ order.order_id }}', this.value)">
+                    <option {% if order.status == 'bekliyor' %}selected{% endif %}>bekliyor</option>
+                    <option {% if order.status == 'hazırlanıyor' %}selected{% endif %}>hazırlanıyor</option>
+                    <option {% if order.status == 'teslim edildi' %}selected{% endif %}>teslim edildi</option>
+                </select>
+            </div>
+
+            <!-- 🔥 BURASI DÜZELTİLDİ -->
+            <div class="items">
+                🛒 
+                {% for item in order["items"] %}
+                    {{ item.name }}{% if not loop.last %}, {% endif %}
+                {% endfor %}
+            </div>
+
+            {% if order.note %}
+                <div class="note">📝 {{ order.note }}</div>
+            {% endif %}
+
+        </div>
+        {% endfor %}
+    </div>
+
+    <script>
+        async function updateStatus(orderId, status) {
+            await fetch('/update_status', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    order_id: orderId,
+                    status: status
+                })
+            });
+        }
+    </script>
+</body>
+</html>
