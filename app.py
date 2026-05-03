@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from flask_cors import CORS
-from dynamodb import create_order, get_all_orders, update_order_status
+from cosmosdb import create_order, get_all_orders, update_order_status
 
 app = Flask(__name__)
 CORS(app)
